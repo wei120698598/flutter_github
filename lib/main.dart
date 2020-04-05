@@ -6,7 +6,7 @@ import 'generated/i18n.dart';
 
 void main() {
   debugDumpLayerTree();
-  debugPaintSizeEnabled = false;
+  debugPaintSizeEnabled = true;
   runApp(MyApp());
 }
 
@@ -44,6 +44,8 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _umEdtCtr = TextEditingController();
   final _pwdEdtCtr = TextEditingController();
+  final userNameFocusNode = FocusNode();
+  final pwdFocusNode = FocusNode();
   var _btnEnabled = false;
 
   @override
@@ -59,53 +61,70 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(
         title: Text(S.of(context).page_title_login),
       ),
-      body: Container(
-        margin: EdgeInsets.only(left: 30, right: 30, bottom: 300),
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          _LoginInput(
-            hintText: S.of(context).user_name_input_hint,
-            editingController: _umEdtCtr,
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        //点击隐藏键盘
+        onTap: () {
+          print("shuxin");
+          FocusScope.of(context).requestFocus(new FocusNode());
+        },
+        child: Container(
+          margin: EdgeInsets.only(top: 100, left: 30, right: 30),
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              _LoginInput(
+                hintText: S.of(context).user_name_input_hint,
+                editingController: _umEdtCtr,
+                focusNode: userNameFocusNode,
+                onSubmit: () {
+                  FocusScope.of(context).autofocus(pwdFocusNode);
+                },
+              ),
+              _LoginInput(
+                hintText: S.of(context).password_input_hint,
+                editingController: _pwdEdtCtr,
+                focusNode: pwdFocusNode,
+                isPwd: true,
+                onSubmit: _onSubmit,
+              ),
+              Container(
+                margin: EdgeInsets.only(top: 15),
+                width: double.infinity,
+                child: RaisedButton(
+                  color: Theme.of(context).accentColor,
+                  textColor: Colors.white,
+                  disabledColor: Theme.of(context).accentColor.withOpacity(0.5),
+                  disabledTextColor: Colors.white.withOpacity(0.5),
+                  materialTapTargetSize: MaterialTapTargetSize.padded,
+                  onPressed: _btnEnabled ? _onSubmit() : null,
+                  child: Text(S.of(context).page_title_login),
+                ),
+              ),
+            ],
           ),
-          _LoginInput(
-            hintText: S.of(context).password_input_hint,
-            editingController: _pwdEdtCtr,
-            isPwd: true,
-          ),
-          Container(
-            margin: EdgeInsets.only(top: 15),
-            width: double.infinity,
-            child: RaisedButton(
-              color: Theme.of(context).accentColor,
-              textColor: Colors.white,
-              disabledColor: Theme.of(context).accentColor.withOpacity(0.5),
-              disabledTextColor: Colors.white.withOpacity(0.5),
-              materialTapTargetSize: MaterialTapTargetSize.padded,
-              onPressed: _btnEnabled
-                  ? () {
-                      print("点击了登录${_umEdtCtr.text}:${_pwdEdtCtr.text}");
-                    }
-                  : null,
-              child: Text(S.of(context).page_title_login),
-            ),
-          ),
-        ]),
+        ),
       ),
     );
+  }
+
+  _onSubmit() {
+    //隐藏键盘
+    FocusScope.of(context).requestFocus(new FocusNode());
+    //todo 提交表单
   }
 }
 
 /// 登录输入框
 class _LoginInput extends StatefulWidget {
-  final TextStyle _hintTextStyle = const TextStyle(
-    color: Colors.black12,
-    fontSize: 16,
-  );
-
   final String hintText;
   final bool isPwd;
   final TextEditingController editingController;
+  final focusNode;
+  final onSubmit;
 
-  _LoginInput({Key key, this.hintText, this.isPwd = false, this.editingController}) : super(key: key);
+  _LoginInput({Key key, this.hintText, this.isPwd = false, this.editingController, this.focusNode, this.onSubmit}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() {
@@ -116,6 +135,10 @@ class _LoginInput extends StatefulWidget {
 class _LoginInputState extends State<_LoginInput> {
   bool _visibility = false;
   bool _isEmpty = true;
+  final TextStyle _hintTextStyle = const TextStyle(
+    color: Colors.black12,
+    fontSize: 16,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -128,9 +151,19 @@ class _LoginInputState extends State<_LoginInput> {
       textInputAction: widget.isPwd ? TextInputAction.done : TextInputAction.next,
       obscureText: widget.isPwd && !_visibility,
       controller: widget.editingController,
+      focusNode: widget.focusNode,
+      validator: (text) {
+        if (text.isEmpty) {
+          return widget.isPwd ? "密码不能为空" : "用户名不能空";
+        } else {
+          return "";
+        }
+      },
+      onFieldSubmitted: widget.onSubmit,
       decoration: InputDecoration(
         hintText: widget.hintText,
-        hintStyle: widget._hintTextStyle,
+        hintStyle: _hintTextStyle,
+        labelStyle: _hintTextStyle,
         prefixIcon: Icon(widget.isPwd ? Icons.account_circle : Icons.lock),
         suffixIcon: Visibility(
           visible: !_isEmpty,
