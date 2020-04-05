@@ -1,0 +1,6 @@
+{
+  "page_title_login": "登录",
+  "user_name_input_hint": "请输入用户名或邮箱",
+  "password_input_hint": "请输入密码",
+  "login_btn_text": "登录"
+}
